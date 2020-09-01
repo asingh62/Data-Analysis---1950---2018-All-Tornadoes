@@ -1,0 +1,37 @@
+CREATE SCHEMA IF NOT EXISTS myschema;
+
+CREATE TABLE myschema.TornadoData(
+om INT, yr INT, mo INT, dy INT, date DATE, time TIME, tz INT, st VARCHAR(2), stf INT, stn INT, mag INT, inj INT, fat INT,
+loss DECIMAL, closs DECIMAL, slat DECIMAL, slon DECIMAL, elat DECIMAL, elon DECIMAL, len DECIMAL, wid DECIMAL, ns INT, sn INT,
+sg INT, f1 INT, f2 INT, f3 INT, f4 INT, fc INT
+);
+
+--Import the data into the table
+COPY myschema.TornadoData
+FROM '/home/administrator/Downloads/DATA/1950-2018_all_tornadoes.csv'
+DELIMITER ',' CSV HEADER;
+
+--Display the table
+SELECT * FROM myschema.TornadoData limit 10;
+
+--State with highest loss in 2018 is IA with $320766000
+SELECT st,sum(loss) as Loss_2018 from myschema.TornadoData where yr = 2018 group by st order by Loss_2018 desc;
+
+--Number of storms based on magnitude
+SELECT mag, count(*) as count from myschema.TornadoData group by mag order by count desc;
+
+--State with maximum crop loss in million dollars after 2006
+SELECT st, ROUND(SUM(closs),2) as Total_Crop_Loss FROM myschema.TornadoData WHERE yr > 2006 GROUP BY st ORDER BY Total_Crop_Loss desc;
+
+--State with maximum and minimum number of injuries from 1950-2018 (Ans - TX 11156 and AK 0)
+SELECT st, sum(inj) as total_injuries FROM myschema.TornadoData GROUP BY st ORDER BY total_injuries DESC;
+
+--State with maximum number of fatalities from 1950-2018 (Ans - AL 793)
+SELECT st, sum(fat) as total_fatalities FROM myschema.TornadoData GROUP BY st ORDER BY total_fatalities DESC;
+
+--Area of tornado
+SELECT a.yr, ROUND(a.width,2) as width, ROUND(a.len,2) as length, ROUND((a.len*a.width),2) as tornado_area 
+from (select yr, (wid/1760) as width, len FROM myschema.TornadoData)a ORDER BY yr DESC;
+
+--Tornado fatalities and injuries based on magnitude of the storm
+SELECT mag, sum(inj) as total_injuries, sum(fat) as total_fatalities FROM myschema.TornadoData GROUP BY mag ORDER BY mag; 
